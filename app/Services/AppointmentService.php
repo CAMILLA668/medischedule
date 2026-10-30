@@ -9,23 +9,51 @@ use Illuminate\Support\Facades\DB;
 
 class AppointmentService
 {
-    public function schedule(Doctor $doctor, User $user)
+    public function schedule(Doctor $doctor, User $user, Appointment $appointment)
     {
+        return DB::transaction(function () use ($doctor, $user, $appointment) {
+
        $appointmentDate =  $appointment->appointment_date;
+
        if($appointmentDate->isPast()) {
-        throw new \DomainException(
+          throw new \DomainException(
             'Não é possível marcar consulta em uma data que já passou.'
-            );
+          );
        }
 
        $doctorAppointment = Appointment::where('doctor_id', $doctor->id)
-          ->where('doctor_id', $doctor->id)
-          ->first();
+          ->where('appointment_date', $appointmentDate)
+          ->exists();
 
-        $appointment
+        $endDate = $appointmentDate->copy()->addMinutes($doctor->slot_duration);
 
+        if($appointmentDate)
 
-    }
+          if($doctorAppointment == true) {
+            throw new \DomainException(
+                'Esse horário já foi preenchido. Por favor, escolha outro horário.'
+            );
+        }
+
+        $patientAppointment = Appointment::where('patient_id', $user->id)
+           ->where('appointment_date', $appointmentDate)
+           ->exists();
+
+           if($patientAppointment == true) {
+            throw new \DomainException(
+                'Você já possuí uma consulta nesse horário. Por favor, escolha outro horário.'
+                );
+           }
+
+        return Appointment::create([
+            'patient_id'       => $user->id,
+            'doctor_id'        => $doctor->id,
+            'status'           => 'scheduled',
+            'appointment_date' => $appointmentDate,
+        ]);
+    });
+
+   }
 
     public function cancel(User $user, Appointment $appointment) {
         if($user->id !== $appointment->patient_id ) {

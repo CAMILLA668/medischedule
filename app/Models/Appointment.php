@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon ou Carbon\Carbon;
 
 class Appointment extends Model
 {
@@ -15,6 +16,10 @@ class Appointment extends Model
         'status',
         'notes',
         'canceled_at',
+    ];
+
+    protected $cast = [
+        'appointment_date' => 'dateTime',
     ];
 
     public function user(): BelongsTo
